@@ -39,6 +39,19 @@ public class Libre2RawValue extends PlusModel {
                 .execute();
     }
 
+    public static List<Libre2RawValue> last20Minutes() {
+        return lastMinutes(20);
+    }
+
+    public static List<Libre2RawValue> lastMinutes(int minutes) {
+        double timestamp = (new Date().getTime()) - (60000 * minutes);
+        return new Select()
+                .from(Libre2RawValue.class)
+                .where("ts >= " + timestamp)
+                .orderBy("ts asc")
+                .execute();
+    }
+
     public static List<Libre2RawValue> latestForGraph(int number, double startTime) {
         return latestForGraph(number, (long) startTime, Long.MAX_VALUE);
     }

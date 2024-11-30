@@ -9,6 +9,7 @@ import com.eveningoutpost.dexdrip.models.JoH;
 import com.eveningoutpost.dexdrip.models.LibreBlock;
 import com.eveningoutpost.dexdrip.models.UserError.Log;
 import com.eveningoutpost.dexdrip.R;
+import com.eveningoutpost.dexdrip.UtilityModels.BgGraphBuilder;
 import com.eveningoutpost.dexdrip.utilitymodels.Constants;
 import com.eveningoutpost.dexdrip.utilitymodels.HPointValue;
 import com.eveningoutpost.dexdrip.utilitymodels.Pref;
@@ -116,7 +117,7 @@ public class LibreTrendGraph extends BaseAppCompatActivity {
              }
              long bg_time = libreTrendLatest.timestamp - time_offset;
              if (bg_time <= end_time && bg_time >= start_time) {
-                 points.add(new HPointValue( ((double)(bg_time) / FUZZER), bg * conversion_factor_mmol));
+                 points.add(new PointValue((float)BgGraphBuilder.timeStampToGraphPos((double)(bg_time)), bg * conversion_factor_mmol));
              }
              
              time_offset += Constants.MINUTE_IN_MS;
