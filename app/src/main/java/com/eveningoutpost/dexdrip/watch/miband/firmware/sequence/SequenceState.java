@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.Sequence;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.sequence;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import lombok.Getter;
 
-import static com.eveningoutpost.dexdrip.watch.miband.Firmware.FirmwareOperations.fromUint8;
+import static com.eveningoutpost.dexdrip.watch.miband.firmware.FirmwareOperations.fromUint8;
 
 public class AlertMessage extends BaseMessage {
 

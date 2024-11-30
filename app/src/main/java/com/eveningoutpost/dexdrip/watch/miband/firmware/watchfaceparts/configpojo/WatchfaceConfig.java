@@ -1,6 +1,5 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts.ConfigPOJO;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts.configpojo;
 
-import com.eveningoutpost.dexdrip.watch.miband.MiBandType;
 import com.google.gson.annotations.SerializedName;
 
 public class WatchfaceConfig {

@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts.ConfigPOJO;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts.configpojo;
 
 import android.graphics.Color;
 

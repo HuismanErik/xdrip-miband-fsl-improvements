@@ -10,15 +10,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.PowerManager;
-import android.support.annotation.RequiresApi;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.preference.PreferenceManager;
+import android.preference.PreferenceManager;
 
 import com.eveningoutpost.dexdrip.models.ActiveBgAlert;
-import com.eveningoutpost.dexdrip.Models.AlertType;
+import com.eveningoutpost.dexdrip.models.AlertType;
 import com.eveningoutpost.dexdrip.models.BgReading;
 import com.eveningoutpost.dexdrip.models.HeartRate;
 import com.eveningoutpost.dexdrip.models.JoH;
@@ -36,11 +33,11 @@ import com.eveningoutpost.dexdrip.utilitymodels.StatusItem;
 import com.eveningoutpost.dexdrip.utils.bt.Subscription;
 import com.eveningoutpost.dexdrip.utils.framework.PoorMansConcurrentLinkedDeque;
 import com.eveningoutpost.dexdrip.utils.framework.WakeLockTrampoline;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.FirmwareOperations;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.Sequence.SequenceState;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.Sequence.SequenceStateMiBand4;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.Sequence.SequenceStateMiBand5;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceGenerator;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.FirmwareOperations;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.sequence.SequenceState;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.sequence.SequenceStateMiBand4;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.sequence.SequenceStateMiBand5;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.WatchFaceGenerator;
 import com.eveningoutpost.dexdrip.watch.miband.message.AlertLevelMessage;
 import com.eveningoutpost.dexdrip.watch.miband.message.AlertMessage;
 import com.eveningoutpost.dexdrip.watch.miband.message.AuthMessages;
@@ -95,6 +92,9 @@ import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.AUT
 import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.COMMAND_ACK_FIND_PHONE_IN_PROGRESS;
 import static com.eveningoutpost.dexdrip.watch.miband.message.OperationCodes.COMMAND_DISABLE_CALL;
 import static com.eveningoutpost.dexdrip.xdrip.gs;
+
+import androidx.annotation.RequiresApi;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 /**
  * <p>

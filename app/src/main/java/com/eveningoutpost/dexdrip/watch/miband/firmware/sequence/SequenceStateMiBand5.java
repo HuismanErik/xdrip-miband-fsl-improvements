@@ -1,9 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.Sequence;
-
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.FirmwareOperations;
-
-import java.util.ArrayList;
-import java.util.List;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.sequence;
 
 public class SequenceStateMiBand5 extends SequenceState {
     public static final String UNKNOWN_REQUEST = "UNKNOWN_REQUEST";

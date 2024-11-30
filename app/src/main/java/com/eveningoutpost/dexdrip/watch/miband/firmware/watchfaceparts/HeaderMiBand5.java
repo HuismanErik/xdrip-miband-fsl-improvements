@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts;
 
 public class HeaderMiBand5 extends Header {
     protected static final String headerSignature = "UIHH\1\0";

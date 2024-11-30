@@ -1279,6 +1279,9 @@
     <string name="summary_miband_goal_notification">MiBand will vibrate when you reach a goal</string>
     <string name="title_miband_locale_24_hour">24 Hour clock</string>
     <string name="summary_miband_locale_24_hour">Show 24 Hour clock</string>
+    <string name="title_miband_send_calls">Stuur oproepen</string>
+    <string name="summary_miband_send_calls">Stuur oproepmeldingen naar de band (Android 6+)</string>
+    <string name="title_miband_screens_features">MiBand-schermen / functies</string>
 
     <string name="title_miband_nightmode_category">Night mode settings</string>
     <string name="title_miband_nightmode_enabled">Enable night mode settings</string>

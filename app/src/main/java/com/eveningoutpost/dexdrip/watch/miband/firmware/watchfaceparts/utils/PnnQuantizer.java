@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts.Utils;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts.utils;
 /* Fast pairwise nearest neighbor based algorithm for multilevel thresholding
 Copyright (C) 2004-2016 Mark Tyler and Dmitry Groshev
 Copyright (c) 2018-2019 Miller Cy Chan

@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts;
 
 public class HeaderMiBand4 extends Header{
     protected static final String headerSignature = "HMDIAL\0";

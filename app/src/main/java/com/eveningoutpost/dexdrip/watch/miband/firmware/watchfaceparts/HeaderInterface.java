@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts;
 
 import java.io.IOException;
 import java.io.InputStream;

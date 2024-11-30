@@ -1,11 +1,11 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;
 
 import com.eveningoutpost.dexdrip.models.UserError;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceGenerator;
-import com.eveningoutpost.dexdrip.watch.miband.Firmware.WatchFaceParts.Utils.PnnQuantizer;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.WatchFaceGenerator;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.watchfaceparts.utils.PnnQuantizer;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static com.eveningoutpost.dexdrip.watch.miband.Firmware.FirmwareOperations.fromUint16;
+import static com.eveningoutpost.dexdrip.watch.miband.firmware.FirmwareOperations.fromUint16;
 
 public class Image {
     private static final boolean d = true;

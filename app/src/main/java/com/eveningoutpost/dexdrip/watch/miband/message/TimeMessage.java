@@ -5,8 +5,8 @@ import com.eveningoutpost.dexdrip.watch.miband.Const;
 import java.util.Calendar;
 import java.util.UUID;
 
-import static com.eveningoutpost.dexdrip.watch.miband.Firmware.FirmwareOperations.fromUint16;
-import static com.eveningoutpost.dexdrip.watch.miband.Firmware.FirmwareOperations.fromUint8;
+import static com.eveningoutpost.dexdrip.watch.miband.firmware.FirmwareOperations.fromUint16;
+import static com.eveningoutpost.dexdrip.watch.miband.firmware.FirmwareOperations.fromUint8;
 
 public class TimeMessage extends BaseMessage {
     public byte[] getTimeMessage( long timestamp) {

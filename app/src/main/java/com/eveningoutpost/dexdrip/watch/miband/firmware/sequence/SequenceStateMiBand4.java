@@ -1,4 +1,4 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware.Sequence;
+package com.eveningoutpost.dexdrip.watch.miband.firmware.sequence;
 
 public class SequenceStateMiBand4 extends SequenceState {
     {

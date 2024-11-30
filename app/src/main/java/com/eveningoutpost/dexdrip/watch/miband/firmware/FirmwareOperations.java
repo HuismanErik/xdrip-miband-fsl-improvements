@@ -1,9 +1,9 @@
-package com.eveningoutpost.dexdrip.watch.miband.Firmware;
+package com.eveningoutpost.dexdrip.watch.miband.firmware;
 
 import com.eveningoutpost.dexdrip.models.JoH;
 import com.eveningoutpost.dexdrip.models.UserError;
 import com.eveningoutpost.dexdrip.watch.miband.Const;
-import com.eveningoutpost.dexdrip.watch.miband.firmware.Sequence.SequenceState;
+import com.eveningoutpost.dexdrip.watch.miband.firmware.sequence.SequenceState;
 import com.eveningoutpost.dexdrip.watch.miband.MiBandService;
 
 import java.io.ByteArrayOutputStream;
