@@ -5,11 +5,11 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.eveningoutpost.dexdrip.BaseAppCompatActivity;
+import com.eveningoutpost.dexdrip.R;
 import com.eveningoutpost.dexdrip.models.JoH;
 import com.eveningoutpost.dexdrip.models.LibreBlock;
 import com.eveningoutpost.dexdrip.models.UserError.Log;
-import com.eveningoutpost.dexdrip.R;
-import com.eveningoutpost.dexdrip.UtilityModels.BgGraphBuilder;
+import com.eveningoutpost.dexdrip.utilitymodels.BgGraphBuilder;
 import com.eveningoutpost.dexdrip.utilitymodels.Constants;
 import com.eveningoutpost.dexdrip.utilitymodels.HPointValue;
 import com.eveningoutpost.dexdrip.utilitymodels.Pref;
@@ -25,8 +25,6 @@ import lecho.lib.hellocharts.model.LineChartData;
 import lecho.lib.hellocharts.model.PointValue;
 import lecho.lib.hellocharts.util.ChartUtils;
 import lecho.lib.hellocharts.view.LineChartView;
-
-import static com.eveningoutpost.dexdrip.utilitymodels.BgGraphBuilder.FUZZER;
 
 
 public class LibreTrendGraph extends BaseAppCompatActivity {
@@ -61,7 +59,7 @@ public class LibreTrendGraph extends BaseAppCompatActivity {
             Log.e(TAG, "LibreTrendPoints exists but libreTrendLatest is NULL.");
             return null;
         }
-        ArrayList<Float> ret = new ArrayList<Float>();
+        ArrayList<Float> ret = new ArrayList<>();
         
         double factor = libreTrendLatest.getFactor();
         if(factor == 0) {
@@ -117,7 +115,7 @@ public class LibreTrendGraph extends BaseAppCompatActivity {
              }
              long bg_time = libreTrendLatest.timestamp - time_offset;
              if (bg_time <= end_time && bg_time >= start_time) {
-                 points.add(new PointValue((float)BgGraphBuilder.timeStampToGraphPos((double)(bg_time)), bg * conversion_factor_mmol));
+                 points.add(new HPointValue((float)BgGraphBuilder.timeStampToGraphPos((double)(bg_time)), bg * conversion_factor_mmol));
              }
              
              time_offset += Constants.MINUTE_IN_MS;

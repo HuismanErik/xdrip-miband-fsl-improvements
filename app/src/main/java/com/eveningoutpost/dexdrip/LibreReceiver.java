@@ -7,10 +7,8 @@ import static com.eveningoutpost.dexdrip.models.Libre2Sensor.Libre2Sensors;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.preference.PreferenceManager;
 import android.text.format.DateFormat;
 
 import com.eveningoutpost.dexdrip.models.BgReading;
@@ -330,19 +328,21 @@ public class LibreReceiver extends BroadcastReceiver {
             }
         }
     }
+    private static long SMOOTHING_DURATION = TimeUnit.MINUTES.toMillis(25);
 
-    private static double calculateWeightedAverage(List<Libre2RawValue> rawValues, long now, long smoothing_duration) {
+
+    private static double calculateWeightedAverage(List<Libre2RawValue> rawValues, long now) {
         double sum = 0;
         double weightSum = 0;
-        DecimalFormat longformat = new DecimalFormat("#,###,###,##0.00");
+        DecimalFormat longformat = new DecimalFormat( "#,###,###,##0.00" );
 
-        libre_calc_doku = "";
+        libre_calc_doku="";
         for (Libre2RawValue rawValue : rawValues) {
-            double weight = 1 - ((now - rawValue.timestamp) / (double) smoothing_duration);
+            double weight = 1 - ((now - rawValue.timestamp) / (double) SMOOTHING_DURATION);
             sum += rawValue.glucose * weight;
             weightSum += weight;
-            libre_calc_doku += DateFormat.format("kk:mm:ss :", rawValue.timestamp) + " w:" + longformat.format(weight) + " raw: " + rawValue.glucose + "\n";
-        }
+            libre_calc_doku += DateFormat.format("kk:mm:ss :",rawValue.timestamp) + " w:" + longformat.format(weight) +" raw: " + rawValue.glucose  + "\n" ;
+           }
         return Math.round(sum / weightSum);
     }
 

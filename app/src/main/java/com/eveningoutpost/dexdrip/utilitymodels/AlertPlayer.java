@@ -619,7 +619,7 @@ public class AlertPlayer {
         }
 
         if (MiBandEntry.areAlertsEnabled() && ActiveBgAlert.currentlyAlerting()) {
-            MiBand.sendAlert(Const.BG_ALERT_TYPE, highlow + " " + bgValue);
+            MiBand.sendAlert(alert.name, highlow + " " + bgValue, alert.default_snooze);
         }
 
         if (ActiveBgAlert.currentlyAlerting()) {

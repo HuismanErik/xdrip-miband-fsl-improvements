@@ -87,7 +87,7 @@ import static com.eveningoutpost.dexdrip.utilitymodels.ColorCache.X;
 import static com.eveningoutpost.dexdrip.utilitymodels.ColorCache.getCol;
 
 public class BgGraphBuilder {
-    public static final long FUZZER = (int) (30 * Constants.SECOND_IN_MS);
+    public static final int FUZZER = (int) (30 * Constants.SECOND_IN_MS);
     public final static long DEXCOM_PERIOD = 300_000; // 5 minutes
     public final static double NOISE_TRIGGER = 10;
     public final static double NOISE_TRIGGER_ULTRASENSITIVE = 1;
@@ -332,11 +332,11 @@ public class BgGraphBuilder {
                 for (Prediction p : plist) {
                     switch (p.source) {
                         case "EGlucoseRx":
-                            final PointValue point = new PointValue(timestampToFuzzedGraphPos(p.timestamp + (Constants.MINUTE_IN_MS * 10)), (float) (p.glucose * yscale));
+                            final PointValue point = new HPointValue(timestampToFuzzedGraphPos(p.timestamp + (Constants.MINUTE_IN_MS * 10)), (float) (p.glucose * yscale));
                             gpoints.add(point);
                             break;
                         case "Medtrum2nd":
-                            final PointValue mpoint = new PointValue(timestampToFuzzedGraphPos(p.timestamp), (float) (p.glucose * yscale));
+                            final PointValue mpoint = new HPointValue(timestampToFuzzedGraphPos(p.timestamp), (float) (p.glucose * yscale));
                             gpoints.add(mpoint);
                             break;
                     }
@@ -396,7 +396,7 @@ public class BgGraphBuilder {
                     if (--count == 0 || (item.basal_percent != last_percent)) {
 
                         final float this_ypos = (Math.min(item.basal_percent,500) * yscale) / 100f; // capped at 500%
-                        points.add(new PointValue(timestampToFuzzedGraphPos(item.timestamp), this_ypos));
+                        points.add(new HPointValue(timestampToFuzzedGraphPos(item.timestamp), this_ypos));
 
                         last_percent = item.basal_percent;
                     }
@@ -440,10 +440,10 @@ public class BgGraphBuilder {
 
             for (StepCounter pm : pmlist) {
                 if (last_point == null) {
-                    last_point = new PointValue(timestampToFuzzedGraphPos(pm.timestamp), ypos);
+                    last_point = new HPointValue(timestampToFuzzedGraphPos(pm.timestamp), ypos);
                 } else {
-                    final PointValue this_point = new PointValue(timestampToFuzzedGraphPos(pm.timestamp), ypos);
-                    final float time_delta = this_point.getX() - last_point.getX();
+                    final PointValue this_point = new HPointValue(timestampToFuzzedGraphPos(pm.timestamp), ypos);
+                    final double time_delta = this_point.getX() - last_point.getX();
                     if (time_delta > 1) {
 
                         final List<PointValue> new_points = new ArrayList<>();
@@ -527,7 +527,7 @@ public class BgGraphBuilder {
                     UserError.Log.d("HEARTRATE: ", JoH.dateTimeText(pm.timestamp) + " \tHR: " + pm.bpm);
 
                 ypos = (pm.bpm * yscale) / 10;
-                final PointValue this_point = new PointValue(timestampToFuzzedGraphPos(pm.timestamp), ypos);
+                final PointValue this_point = new HPointValue(timestampToFuzzedGraphPos(pm.timestamp), ypos);
                 new_points.add(this_point);
             }
             final Line macroHeartRateLine = new Line(new_points);
@@ -1270,7 +1270,7 @@ public class BgGraphBuilder {
 
                 // swap main and plugin plot if display glucose is from plugin
                 if ((glucose_from_plugin) && (cd != null)) {
-                    pluginValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
+                    pluginValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
                     // recalculate from plugin - beware floating / cached references!
                     bgReading.calculated_value = plugin.getGlucoseFromBgReading(bgReading, cd);
                     bgReading.filtered_calculated_value = plugin.getGlucoseFromFilteredBgReading(bgReading, cd);
@@ -1282,27 +1282,27 @@ public class BgGraphBuilder {
                     // TODO differentiate between filtered and pseudo-filtered when both may be in play at different times
                     final double rollingValue = rollingAverage.put(bgReading.calculated_value);
                     if (rollingAverage.reachedPeak()) {
-                        filteredValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp + rollingOffset), (float) unitized(rollingValue)));
+                        filteredValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp + rollingOffset), (float) unitized(rollingValue)));
                     }
                 }
                 if ((interpret_raw && (bgReading.raw_calculated > 0))) {
-                    rawInterpretedValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.raw_calculated)));
+                    rawInterpretedValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.raw_calculated)));
                 }
                 if ((!glucose_from_plugin) && (plugin != null) && (cd != null)) {
-                    pluginValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(plugin.getGlucoseFromBgReading(bgReading, cd))));
+                    pluginValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(plugin.getGlucoseFromBgReading(bgReading, cd))));
                 }
                 if (bgReading.ignoreForStats) {
-                    badValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
+                    badValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
                 } else if (bgReading.calculated_value >= 400) {
-                    highValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(400)));
+                    highValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(400)));
                 } else if (unitized(bgReading.calculated_value) >= highMark) {
-                    highValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
+                    highValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
                 } else if (unitized(bgReading.calculated_value) >= lowMark) {
-                    inRangeValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
+                    inRangeValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
                 } else if (bgReading.calculated_value >= 40) {
-                    lowValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
+                    lowValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value)));
                 } else if (bgReading.calculated_value > 13) {
-                    lowValues.add(new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(40)));
+                    lowValues.add(new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(40)));
                 }
 
                 if (illustrate_backfilled_data && bgReading.calculated_value > 13 && bgReading.calculated_value < 400 && bgReading.isBackfilled()) {
@@ -1462,7 +1462,7 @@ public class BgGraphBuilder {
                                 double polyPredicty = poly.predict(bgReading.timestamp);
                                 //if (d) Log.d(TAG, "Poly predict: "+JoH.qs(polyPredict)+" @ "+JoH.qs(iob.timestamp));
                                 if ((polyPredicty < highMark) && (polyPredicty > 0)) {
-                                    PointValue zv = new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) polyPredicty);
+                                    PointValue zv = new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) polyPredicty);
                                     polyBgValues.add(zv);
                                 }
                             }
@@ -1531,7 +1531,7 @@ public class BgGraphBuilder {
                                 if (d)
                                     Log.d(TAG, "noise Poly predict: " + JoH.qs(polyPredicty) + " @ " + JoH.qs(bgReading.timestamp));
                                 if ((polyPredicty < highMark) && (polyPredicty > 0)) {
-                                    PointValue zv = new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) polyPredicty);
+                                    PointValue zv = new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) polyPredicty);
                                     noisePolyBgValues.add(zv);
                                 }
                             }
@@ -1733,12 +1733,12 @@ public class BgGraphBuilder {
                                     double height = iob.iob * iobscale;
                                     if (height > cob_insulin_max_draw_value)
                                         height = cob_insulin_max_draw_value;
-                                    PointValue pv = new PointValue(fuzzed_timestamp, (float) height);
+                                    PointValue pv = new HPointValue(fuzzed_timestamp, (float) height);
                                     iobValues.add(pv);
                                     double activityheight = iob.jActivity * 3; // currently scaled by profile
                                     if (activityheight > cob_insulin_max_draw_value)
                                         activityheight = cob_insulin_max_draw_value;
-                                    PointValue av = new PointValue(fuzzed_timestamp, (float) activityheight);
+                                    PointValue av = new HPointValue(fuzzed_timestamp, (float) activityheight);
                                     activityValues.add(av);
                                 }
 
@@ -1746,7 +1746,7 @@ public class BgGraphBuilder {
                                     double height = iob.cob * cobscale;
                                     if (height > cob_insulin_max_draw_value)
                                         height = cob_insulin_max_draw_value;
-                                    PointValue pv = new PointValue(fuzzed_timestamp, (float) height);
+                                    PointValue pv = new HPointValue(fuzzed_timestamp, (float) height);
                                     if (d)
                                         Log.d(TAG, "Cob total record: " + JoH.qs(height) + " " + JoH.qs(iob.cob) + " " + Double.toString(pv.getY()) + " @ timestamp: " + Long.toString(iob.timestamp));
                                     cobValues.add(pv); // warning should not be hardcoded
@@ -1763,7 +1763,7 @@ public class BgGraphBuilder {
                                                 Log.d(TAG, "Poly predict: " + JoH.qs(polyPredict) + " @ " + JoH.dateTimeText(iob.timestamp));
                                             if (show_moment_working_line) {
                                                 if (((polyPredict < highMark) || (polyPredict < initial_predicted_bg)) && (polyPredict > 0)) {
-                                                    PointValue zv = new PointValue(fuzzed_timestamp, (float) polyPredict);
+                                                    PointValue zv = new HPointValue(fuzzed_timestamp, (float) polyPredict);
                                                     polyBgValues.add(zv);
                                                 }
                                             }
@@ -1903,7 +1903,7 @@ public class BgGraphBuilder {
     }
 
     private PointValue bgReadingToPoint(BgReading bgReading) {
-        return new PointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value));
+        return new HPointValue(timestampToFuzzedGraphPos(bgReading.timestamp), (float) unitized(bgReading.calculated_value));
     }
 
     public Line avg1Line() {
@@ -2115,7 +2115,7 @@ public class BgGraphBuilder {
             calendar.add(Calendar.HOUR, 1);
         }
         while (calendar.getTimeInMillis()< ( graphPosToTimestamp(end_time) + ((long) predictivehours * 60 * 60 * 1000))) {
-            xAxisValues.add(new AxisValue(timestampToFuzzedGraphPos((double)calendar.getTimeInMillis()), (timeFormat.format(calendar.getTimeInMillis())).toCharArray()));
+            xAxisValues.add(new AxisValue(timestampToFuzzedGraphPos(calendar.getTimeInMillis()), (timeFormat.format(calendar.getTimeInMillis())).toCharArray()));
             calendar.add(Calendar.HOUR, 1);
         }
 

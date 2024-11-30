@@ -617,6 +617,7 @@ public class MiBandService extends JamBaseBluetoothSequencer {
 
                 for (final UUID check : huntCharacterstics) {
                     if (characteristic.getUuid().equals(check)) {
+                        I.readCharacteristic = check;
                         found = true;
                     }
                 }
