@@ -3,6 +3,7 @@ package com.eveningoutpost.dexdrip.utilitymodels;
 // jamorham
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -52,7 +54,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import static com.eveningoutpost.dexdrip.alert.UpdateAvailable.XDRIP_UPDATE_NOTIFICATION_PENDING;
+import static com.eveningoutpost.dexdrip.utilitymodels.Constants.XDRIP_UPDATE_NOTIFICATION_ID;
 import static com.eveningoutpost.dexdrip.utilitymodels.OkHttpWrapper.enableTls12OnPreLollipop;
+import static com.eveningoutpost.dexdrip.utilitymodels.PersistentStore.incrementLong;
 
 public class UpdateActivity extends BaseAppCompatActivity {
 
@@ -60,6 +65,7 @@ public class UpdateActivity extends BaseAppCompatActivity {
     private static final String useInternalDownloaderPrefsName = "use_internal_downloader";
     private static final String last_update_check_time = "last_update_check_time";
     private static final String TAG = "jamorham update";
+    private static final String UP_LOAD_BALANCER = "UP_LOAD_BALANCER";
     private static OkHttpClient httpClient = null;
     public static long last_check_time = 0;
     private static SharedPreferences prefs;
@@ -86,13 +92,14 @@ public class UpdateActivity extends BaseAppCompatActivity {
     public static void checkForAnUpdate(final Context context, final boolean fromUi) {
         if (prefs == null) prefs = PreferenceManager.getDefaultSharedPreferences(context);
         if ((last_check_time != -1) && (!prefs.getBoolean(AUTO_UPDATE_PREFS_NAME, true))) return;
+        String channel = prefs.getString("update_channel", "beta");
         if (last_check_time == 0)
             last_check_time = prefs.getLong(last_update_check_time, 0);
-        if (((JoH.tsl() - last_check_time) > (86300000 * 2)) || (debug)) {
+        long checkFrequency = channel.equals("beta") ? (86300_000 * 3) : (86300_000 * 2);
+        if (((JoH.tsl() - last_check_time) > checkFrequency) || (debug)) {
             last_check_time = JoH.tsl();
             prefs.edit().putLong(last_update_check_time, last_check_time).apply();
 
-            String channel = prefs.getString("update_channel", "beta");
             Log.i(TAG, "Checking for a software update, channel: " + channel);
 
             String subversion = "";
@@ -101,7 +108,7 @@ public class UpdateActivity extends BaseAppCompatActivity {
                 Log.d(TAG, "Using subversion: " + subversion);
             }
 
-            final String CHECK_URL = context.getString(R.string.wserviceurl) + "/update-check/" + channel + subversion;
+            final String CHECK_URL = context.getString((incrementLong(UP_LOAD_BALANCER) % 2 == 1) ? R.string.qserviceurl : R.string.wserviceurl) + "/update-check/" + channel + subversion;
             DOWNLOAD_URL = "";
             newversion = 0;
 
@@ -136,7 +143,7 @@ public class UpdateActivity extends BaseAppCompatActivity {
                     final Response response = httpClient.newCall(request).execute();
                     if (response.isSuccessful()) {
 
-                        final String lines[] = response.body().string().split("\\r?\\n");
+                        final String[] lines = response.body().string().split("\\r?\\n");
                         if (lines.length > 1) {
                             try {
                                 newversion = Integer.parseInt(lines[0]);
@@ -168,13 +175,28 @@ public class UpdateActivity extends BaseAppCompatActivity {
                                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                         context.startActivity(intent);
 
+                                        if (!fromUi) {
+                                            // activate the flag for a notification if this was a background check
+                                            PersistentStore.setBoolean(XDRIP_UPDATE_NOTIFICATION_PENDING, true);
+                                        }
+
                                     } else {
                                         Log.e(TAG, "Error parsing second line of update reply");
                                     }
                                 } else {
                                     Log.i(TAG, "Our current version is the most recent: " + versionnumber + " vs " + newversion);
                                     if (fromUi) { // Only for manual update check
-                                        JoH.static_toast_long(xdrip.gs(R.string.current_version_is_up_to_date));
+                                        if (channel.equals("nightly")) {
+                                            JoH.static_toast_long(xdrip.gs(R.string.current_version_is_up_to_date));
+                                        } else {
+                                            ((Activity) context).runOnUiThread(() -> {
+                                                AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                                                builder.setTitle(context.getString(R.string.title_dialog_check_for_update, channel));
+                                                builder.setMessage(context.getString(R.string.message_dialog_check_for_update));
+                                                builder.setPositiveButton(R.string.close, null);
+                                                builder.show();
+                                            });
+                                        }
                                     }
                                 }
                             } catch (Exception e) {
@@ -273,16 +295,14 @@ public class UpdateActivity extends BaseAppCompatActivity {
     }
 
     private boolean checkPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (ContextCompat.checkSelfPermission(getApplicationContext(),
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(getApplicationContext(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
 
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
-                        MY_PERMISSIONS_REQUEST_STORAGE_DOWNLOAD);
-                return false;
-            }
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_STORAGE_DOWNLOAD);
+            return false;
         }
         return true;
     }
@@ -328,6 +348,9 @@ public class UpdateActivity extends BaseAppCompatActivity {
         } else {
             Log.e(TAG, "Download button pressed but no download URL");
         }
+
+        PersistentStore.setBoolean(XDRIP_UPDATE_NOTIFICATION_PENDING, false); // clear notification trigger
+        JoH.cancelNotification(XDRIP_UPDATE_NOTIFICATION_ID);
     }
 
     private void viewIntentDownload(final String DOWNLOAD_URL) {

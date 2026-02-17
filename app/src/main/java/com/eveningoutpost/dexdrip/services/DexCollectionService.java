@@ -40,6 +40,7 @@ import android.preference.PreferenceManager;
 
 import com.eveningoutpost.dexdrip.GcmActivity;
 import com.eveningoutpost.dexdrip.Home;
+import com.eveningoutpost.dexdrip.cgm.nsfollow.utils.Anticipate;
 import com.eveningoutpost.dexdrip.importedlibraries.usbserial.util.HexDump;
 import com.eveningoutpost.dexdrip.models.ActiveBluetoothDevice;
 import com.eveningoutpost.dexdrip.models.Atom;
@@ -86,6 +87,7 @@ import java.util.UUID;
 
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
 import static com.eveningoutpost.dexdrip.models.JoH.convertPinToBytes;
+import static com.eveningoutpost.dexdrip.models.JoH.tsl;
 import static com.eveningoutpost.dexdrip.utilitymodels.BgGraphBuilder.DEXCOM_PERIOD;
 import static com.eveningoutpost.dexdrip.utils.bt.Helper.getStatusName;
 import static com.eveningoutpost.dexdrip.xdrip.gs;
@@ -126,8 +128,9 @@ public class DexCollectionService extends Service implements BtCallBack {
     private static long retry_time = 0;
     private static long failover_time = 0;
     private static long poll_backoff = 0;
-    private static long retry_backoff = 0;
-    private static long last_connect_request = 0;
+    private static volatile long retry_backoff = 0;
+    private static volatile long last_connect_request = 0;
+    private static volatile long last_connected = -1;
     private static volatile long descriptor_time = 0;
     private static volatile int descriptor_callback_failures = 0;
     private static int watchdog_count = 0;
@@ -148,6 +151,7 @@ public class DexCollectionService extends Service implements BtCallBack {
     private static long failover_time_watch = 0;
     private static String static_last_hexdump_watch;
     private static String static_last_sent_hexdump_watch;
+    public static int MAX_BT_WDG = 20; // Bluetooth watchdog timer default (max)
     private static final UUID CCCD = UUID.fromString(HM10Attributes.CLIENT_CHARACTERISTIC_CONFIG);
     public final UUID nrfDataService = UUID.fromString(HM10Attributes.NRF_UART_SERVICE);
     public final UUID nrfDataRXCharacteristic = UUID.fromString(HM10Attributes.NRF_UART_TX);
@@ -215,6 +219,7 @@ public class DexCollectionService extends Service implements BtCallBack {
 
     private synchronized void handleConnectedStateChange() {
         mConnectionState = STATE_CONNECTED;
+        last_connected = tsl();
         scanMeister.stop();
         if ((servicesDiscovered == DISCOVERED.NULL) || Pref.getBoolean("always_discover_services", true)) {
             Log.d(TAG, "Requesting to discover services: previous: " + servicesDiscovered);
@@ -384,7 +389,7 @@ public class DexCollectionService extends Service implements BtCallBack {
             final PowerManager.WakeLock wl = JoH.getWakeLock("bluetooth-onservices", 60000);
             Log.d(TAG, "onServicesDiscovered received status: " + status);
 
-            if (prefs.getBoolean(PREF_DEX_COLLECTION_BONDING, false)) {
+          /*  if (prefs.getBoolean(PREF_DEX_COLLECTION_BONDING, false)) {
                 if ((mDeviceAddress != null) && (device != null) && (!areWeBonded(mDeviceAddress))) {
                     if (JoH.ratelimit("dexcollect-create-bond", 20)) {
                         Log.d(TAG, "Attempting to create bond to: " + mDeviceAddress + " try " + bondingTries);
@@ -399,7 +404,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                         }
                     }
                 }
-            }
+            }*/
 
             final BluetoothGattService gattService = mBluetoothGatt.getService(xDripDataService);
             if (gattService == null) {
@@ -429,7 +434,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                             final BluetoothGattDescriptor bdescriptor = gattCharacteristic.getDescriptor(UUID.fromString(HM10Attributes.CLIENT_CHARACTERISTIC_CONFIG));
                             Log.i(TAG, "Bluetooth Notification Descriptor found: " + bdescriptor.getUuid());
                             bdescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                            descriptor_time = JoH.tsl();
+                            descriptor_time = tsl();
                             mBluetoothGatt.writeDescriptor(bdescriptor);
                         } catch (Exception e) {
                             Log.e(TAG, "Error setting notification value descriptor: " + e);
@@ -482,7 +487,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                         try {
                             final BluetoothGattDescriptor bdescriptor = nrfGattCharacteristic.getDescriptor(UUID.fromString(HM10Attributes.CLIENT_CHARACTERISTIC_CONFIG));
                             Log.i(TAG, "NRF Bluetooth Notification Descriptor found: " + bdescriptor.getUuid());
-                            descriptor_time = JoH.tsl();
+                            descriptor_time = tsl();
                             bdescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                             mBluetoothGatt.writeDescriptor(bdescriptor);
                         } catch (Exception e) {
@@ -602,7 +607,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                 Blukon.initialize();
 
             }
-            
+
             // libre2 device
             Log.i(TAG, "Looking for  libre2 device");
             final BluetoothGattService Libre2Service = mBluetoothGatt.getService(Libre2ServiceUUID);
@@ -614,7 +619,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                     JoH.releaseWakeLock(wl);
                     return;
                 }
-                
+
                 try {
                     final int charaProp = mCharacteristic.getProperties();
                     if ((charaProp & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
@@ -629,14 +634,14 @@ public class DexCollectionService extends Service implements BtCallBack {
                     Log.e(TAG, "Libre2 Exception during notification preparation " + e);
                 }
 
-                
+
                 mCharacteristicSend = Libre2Service.getCharacteristic(UUID.fromString(HM10Attributes.LIBRE2_LOGIN_CHARACTERISTIC));
                 if (mCharacteristicSend == null) {
                     Log.w(TAG, "onServicesDiscovered: Libre2 login characteristic not found");
                     JoH.releaseWakeLock(wl);
                     return;
                 }
-                status("Enabled " + getString(R.string.blukon)); //??? change to libre2
+                status("Enabled " + getString(R.string.libre)); //??? change to libre2
                 byte[] reply = LibreBluetooth.initialize();
                 if(reply != null) {
                     sendBtMessage(reply);
@@ -653,7 +658,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                     final BluetoothGattDescriptor descriptor = mCharacteristic.getDescriptor(CCCD);
                     if (descriptor != null) {
                         descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                        descriptor_time = JoH.tsl();
+                        descriptor_time = tsl();
                         if (!mBluetoothGatt.writeDescriptor(descriptor)) {
                             Log.d(TAG, "Failed to write descriptor!");
                             unBondBlucon();
@@ -737,7 +742,7 @@ public class DexCollectionService extends Service implements BtCallBack {
             } catch (Exception e) {
                 UserError.Log.wtf(TAG, "Got exception trying to display data: " + e);
             }
-         }
+        }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
@@ -1270,11 +1275,13 @@ public class DexCollectionService extends Service implements BtCallBack {
         prefs.registerOnSharedPreferenceChangeListener(prefListener);
     }
 
+    private boolean useAnticipate = true;
+
     public void setRetryTimer() {
         mStaticState = mConnectionState;
         if (shouldServiceRun()) {
             //final long retry_in = (Constants.SECOND_IN_MS * 25);
-            final long retry_in = whenToRetryNext();
+            final long retry_in = (useAnticipate && last_connected > 0) ? (Anticipate.next(tsl(),last_connected, 120_000, 15) - tsl()) : whenToRetryNext();
             Log.d(TAG, "setRetryTimer: Restarting in: " + (retry_in / Constants.SECOND_IN_MS) + " seconds");
             //serviceIntent = PendingIntent.getService(this, Constants.DEX_COLLECTION_SERVICE_RETRY_ID, new Intent(this, this.getClass()), 0);
             serviceIntent = WakeLockTrampoline.getPendingIntent(this.getClass(), Constants.DEX_COLLECTION_SERVICE_RETRY_ID);
@@ -1302,7 +1309,7 @@ public class DexCollectionService extends Service implements BtCallBack {
         if (retry_backoff < (Constants.MINUTE_IN_MS)) {
             retry_backoff += Constants.SECOND_IN_MS;
         }
-        Log.d(TAG, "Scheduling next retry in: " + JoH.niceTimeScalar(poll_time) + " @ " + JoH.dateTimeText(poll_time + JoH.tsl()) + " period diff: " + (RETRY_PERIOD - JoH.msSince(lastPacketTime)));
+        Log.d(TAG, "Scheduling next retry in: " + JoH.niceTimeScalar(poll_time) + " @ " + JoH.dateTimeText(poll_time + tsl()) + " period diff: " + (RETRY_PERIOD - JoH.msSince(lastPacketTime)));
         return poll_time;
     }
 
@@ -1311,7 +1318,7 @@ public class DexCollectionService extends Service implements BtCallBack {
         if (poll_backoff < (Constants.MINUTE_IN_MS * 6)) {
             poll_backoff += Constants.SECOND_IN_MS;
         }
-        Log.d(TAG, "Scheduling next poll in: " + JoH.niceTimeScalar(poll_time) + " @ " + JoH.dateTimeText(poll_time + JoH.tsl()) + " period diff: " + (POLLING_PERIOD - JoH.msSince(lastPacketTime)));
+        Log.d(TAG, "Scheduling next poll in: " + JoH.niceTimeScalar(poll_time) + " @ " + JoH.dateTimeText(poll_time + tsl()) + " period diff: " + (POLLING_PERIOD - JoH.msSince(lastPacketTime)));
         return poll_time;
     }
 
@@ -1446,7 +1453,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                             Log.d(TAG, "Exception discovering services: " + e);
                         }
                     }
-                    last_poll_sent = JoH.tsl();
+                    last_poll_sent = tsl();
                     if ((JoH.msSince(lastPacketTime) > Home.stale_data_millis()) && (JoH.ratelimit("poll-request-part-b", 15))) {
                         Log.e(TAG, "Stale data so requesting backfill");
                         sendBtMessage(XbridgePlus.sendLast15BRequestPacket());
@@ -1514,7 +1521,7 @@ public class DexCollectionService extends Service implements BtCallBack {
             servicesDiscovered = DISCOVERED.NULL;
             return false;
         }
-        
+
         if (mCharacteristicSend != null && mCharacteristicSend != mCharacteristic) {
             return writeChar(mCharacteristicSend, value);
         }
@@ -1626,7 +1633,7 @@ public class DexCollectionService extends Service implements BtCallBack {
             mBluetoothGatt.connect();
         }
         mConnectionState = STATE_CONNECTING;
-        last_connect_request = JoH.tsl();
+        last_connect_request = tsl();
         return true;
     }
 
@@ -1691,10 +1698,10 @@ public class DexCollectionService extends Service implements BtCallBack {
             sendBtMessage(byteBuffer);
         }
     }
-    
+
     public synchronized void setSerialDataToTransmitterRawData(byte[] buffer, int len) {
 
-        last_time_seen = JoH.tsl();
+        last_time_seen = tsl();
         watchdog_count = 0;
         if (static_use_blukon && Blukon.checkBlukonPacket(buffer)) {
             final byte[] reply = Blukon.decodeBlukonPacket(buffer);
@@ -1727,7 +1734,7 @@ public class DexCollectionService extends Service implements BtCallBack {
             } else if(reply.GotAllData()) {
                 Inevitable.kill("send-tomato-init");
             }
-            
+
             gotValidPacket();
 
         }else if (Bubble.isBubble()) {
@@ -1851,7 +1858,7 @@ public class DexCollectionService extends Service implements BtCallBack {
 
     private void gotValidPacket() {
         retry_backoff = 0;
-        lastPacketTime = JoH.tsl();
+        lastPacketTime = tsl();
     }
 
     private boolean unBondBlucon() {
@@ -1918,12 +1925,7 @@ public class DexCollectionService extends Service implements BtCallBack {
         if (last_time_seen == 0) return;
         if (prefs.getBoolean("bluetooth_watchdog", false)) {
 
-            int MAX_BT_WDG = 20;
-            int bt_wdg_timer = JoH.parseIntWithDefault(Pref.getString("bluetooth_watchdog_timer", Integer.toString(MAX_BT_WDG)), 10, MAX_BT_WDG);
-
-            if ((bt_wdg_timer <= 5) || (bt_wdg_timer > MAX_BT_WDG)) {
-                bt_wdg_timer = MAX_BT_WDG;
-            }
+            int bt_wdg_timer = Pref.getStringToInt("bluetooth_watchdog_timer", MAX_BT_WDG);
 
             if ((JoH.msSince(last_time_seen)) > bt_wdg_timer * Constants.MINUTE_IN_MS) {
                 Log.d(TAG, "Use BT Watchdog timer=" + bt_wdg_timer);
@@ -1931,7 +1933,7 @@ public class DexCollectionService extends Service implements BtCallBack {
                     Log.e(TAG, "Watchdog triggered, attempting to reset bluetooth");
                     status("Watchdog triggered");
                     JoH.restartBluetooth(getApplicationContext());
-                    last_time_seen = JoH.tsl();
+                    last_time_seen = tsl();
                     watchdog_count++;
                     if (watchdog_count > 5) last_time_seen = 0;
                 } else {

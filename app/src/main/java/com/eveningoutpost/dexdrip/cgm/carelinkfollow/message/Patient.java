@@ -12,7 +12,11 @@ public class Patient {
     public boolean patientUsesConnect;
 
     public boolean isBle() {
-        return lastDeviceFamily.contains("BLE");
+        return (lastDeviceFamily.contains("BLE") || lastDeviceFamily.contains("SIMPLERA"));
+    }
+
+    public boolean isCC() {
+        return (lastDeviceFamily.contains("INSTINCT"));
     }
 
 }

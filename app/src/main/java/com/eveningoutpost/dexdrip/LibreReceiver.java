@@ -1,6 +1,7 @@
 package com.eveningoutpost.dexdrip;
 
 import static com.eveningoutpost.dexdrip.Home.get_engineering_mode;
+import static com.eveningoutpost.dexdrip.LibreAlarmReceiver.LIBRE_SOURCE_INFO;
 import static com.eveningoutpost.dexdrip.models.JoH.emptyString;
 import static com.eveningoutpost.dexdrip.models.Libre2Sensor.Libre2Sensors;
 
@@ -102,7 +103,7 @@ public class LibreReceiver extends BroadcastReceiver {
                                         val glucose = item.getDouble("glucoseValue");
                                         val timestamp = item.getLong("timestamp");
                                         if (d) UserError.Log.d(TAG, "Real time item: " + JoH.dateTimeText(timestamp) + " value: " + Unitized.unitized_string_static(glucose));
-                                        BgReading.bgReadingInsertFromInt((int) Math.round(glucose), timestamp, timeslice, false);
+                                        BgReading.bgReadingInsertFromInt((int) Math.round(glucose), timestamp, timeslice, false, LIBRE_SOURCE_INFO);
                                     }
 
                                 } catch (Exception e) {

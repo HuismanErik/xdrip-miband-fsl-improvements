@@ -220,7 +220,7 @@
     <string name="persistent_high_alert_enable">Inschakelen</string>
     <string name="forecasted_low_alert">Voorspelde lage alarm</string>
     <string name="extrapolate_data_to_try_to_predict_lows">Extrapoleer gegevens om te proberen dieptepunten te voorspellen</string>
-    <string name="alarm_at_forecasted_low_mins">Alarm bij Voorspelde Low mins</string>
+    <string name="alarm_at_forecasted_low_mins">Alarm voorspelde lage waarde vanaf minuut</string>
     <string name="other_xdrip_plus_alerts">Andere xDrip+ waarschuwingen</string>
     <string name="xdrip_plus_display_settings">xDrip+ weergaveinstellingen</string>
     <string name="display_customisations">Aanpassingen weergeven</string>
@@ -1260,6 +1260,7 @@
     <string name="summary_lefun_send_alarms">Stuur meldingen naar de band voor glucosealarmen</string>
     <string name="title_lefun_send_alarms">Stuur alarmen</string>
     <string name="title_lefun_option_shake_snoozes">Schud om te sluimeren</string>
+    <string name="title_lefun_send_calls">Stuur oproepen</string>
     <string name="title_lefun_screens_features">Lefun Schermen / Functies</string>
     <string name="title_features">Functies</string>
     <string name="title_lefun_feature_lift_to_wak">Optillen om te ontwaken</string>
@@ -1319,7 +1320,7 @@
     <string name="title_g5_battery_warning_level">Pas het batterijwaarschuwingsniveau aan</string>
     <string name="title_plugins_and_features">Plug-ins en functies</string>
     <string name="title_color_heart_rate1">Hartslag monitor</string>
-    <string name="title_insulin_colors">Insuline kleuren</string>
+    <string name="title_insulin_colors">Insulinekleuren</string>
     <string name="title_color_basal_tbr">Basale TBR</string>
     <string name="title_color_smb_icon">SMB icoon</string>
     <string name="title_color_smb_line">SMB lijn</string>
@@ -1682,4 +1683,7 @@
     <string name="title_Lib2_show_sense_on_status">Toon sensorinfo in Status</string>
     <string name="summary_Lib2_show_sense_on_status">Inschakelen om extra informatie in Status voor Libre 2-sensor weer te geven.</string>
     <string name="reraise_alerts_before_snooze_time">Verhoog waarschuwingen vóór de sluimertijd</string>
+    <string name="volume_profile_high">Hoge glucosewaarden</string>
+    <string name="glupro_disconnected">Verbinding verbroken</string>
+    <string name="glupro_connected">Verbonden</string>
 </resources>
