@@ -137,8 +137,8 @@ public class BgGraphBuilder {
         return c.getTimeInMillis();
     }
 
-    public static long timestampToFuzzedGraphPos(long time) {
-        return (time - graphZeroTime) / FUZZER;
+    public static double timestampToFuzzedGraphPos(long time) {
+        return (double) (time - graphZeroTime) / FUZZER;
     }
 
     public static double timeStampToGraphPos(double time) {
@@ -1851,7 +1851,7 @@ public class BgGraphBuilder {
 
                             //double activity = iob.activity;
                             if ((iob.iob > 0) || (iob.cob > 0) || (iob.jActivity > 0) || (iob.jCarbImpact > 0)) {
-                                fuzzed_timestamp = timestampToFuzzedGraphPos(iob.timestamp);
+                                fuzzed_timestamp = (long) timestampToFuzzedGraphPos(iob.timestamp);
                                 if (d) Log.d(TAG, "iob timestamp: " + iob.timestamp);
                                 if (iob.iob > Profile.minimum_shown_iob) {
                                     double height = iob.iob * iobscale;
