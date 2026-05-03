@@ -523,8 +523,8 @@
                 android:defaultValue="false"
                 android:dependency="lefun_enabled"
                 android:key="lefun_option_call_notifications"
-                android:summary="Send call notifications to the band (Android 6+)"
-                android:title="Send Calls" />
+                android:summary="@string/summary_lefun_send_calls"
+                android:title="@string/title_lefun_send_calls" />
 
             <PreferenceScreen android:title="@string/title_lefun_screens_features"
                 android:key="lefun_features">
@@ -1351,13 +1351,14 @@
                     android:key="bluetooth_watchdog"
                     android:summary="@string/reset_bluetooth"
                     android:title="@string/bluetooth_watchdog" />
-                <EditTextPreference
-                    android:defaultValue="20"
-                    android:dependency="bluetooth_watchdog"
-                    android:inputType="numberDecimal"
+                <ListPreference
                     android:key="bluetooth_watchdog_timer"
                     android:summary="@string/bluetooth_watchdog_timer_sums"
-                    android:title="@string/bluetooth_watchdog_timers" />
+                    android:title="@string/bluetooth_watchdog_timers"
+                    android:entries="@array/bluetooth_watchdog_timer_entries"
+                    android:entryValues="@array/bluetooth_watchdog_timer_values"
+                    android:defaultValue="20"
+                    android:dependency="bluetooth_watchdog" />
                 <CheckBoxPreference
                     android:defaultValue="true"
                     android:key="g5_bluetooth_watchdog"
@@ -1616,11 +1617,20 @@
                 android:key="xdrip_other_misc_extra_screen"
                 android:summary=""
                 android:title="@string/title_Other_misc_options">
-                <CheckBoxPreference
-                    android:defaultValue="true"
-                    android:key="run_service_in_foreground"
-                    android:summary="@string/shows_a_persistent_notification"
-                    android:title="@string/run_collector_in_foreground" />
+                <PreferenceScreen
+                    android:key="collector_in_foreground"
+                    android:title="@string/title_collector_in_foreground">
+                    <CheckBoxPreference
+                        android:defaultValue="true"
+                        android:key="run_service_in_foreground"
+                        android:summary="@string/shows_a_persistent_notification"
+                        android:title="@string/run_collector_in_foreground" />
+                    <CheckBoxPreference
+                        android:defaultValue="false"
+                        android:key="compact_persistent_notification"
+                        android:summary="@string/summary_compact_ongoing_notification"
+                        android:title="@string/title_compact_ongoing_notification" />
+                </PreferenceScreen>
                 <CheckBoxPreference
                     android:defaultValue="false"
                     android:dependency="engineering_mode"
@@ -1698,15 +1708,6 @@
                     android:title="@string/title_NOT_FOR_PRODUCTION_USE" />
 
             </PreferenceScreen>
-            <PreferenceCategory
-                android:key="community_help_category"
-                android:title="@string/help_the_community">
-                <CheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="store_sensor_location"
-                    android:summary="@string/help_the_developers_improve_the_algorithm"
-                    android:title="@string/store_sensor_location_to_help" />
-            </PreferenceCategory>
         </PreferenceScreen>
 
     </PreferenceCategory>

@@ -35,6 +35,7 @@ import com.eveningoutpost.dexdrip.models.Sensor;
 import com.eveningoutpost.dexdrip.models.UserError;
 import com.eveningoutpost.dexdrip.utilitymodels.Constants;
 import com.eveningoutpost.dexdrip.utilitymodels.PersistentStore;
+import com.eveningoutpost.dexdrip.utilitymodels.PumpStatus;
 import com.eveningoutpost.dexdrip.utilitymodels.Unitized;
 import com.eveningoutpost.dexdrip.utils.DexCollectionType;
 import com.eveningoutpost.dexdrip.xdrip;
@@ -58,8 +59,6 @@ public class UiBasedCollector extends NotificationListenerService {
     private static final String UI_BASED_STORE_LAST_VALUE = "UI_BASED_STORE_LAST_VALUE";
     private static final String UI_BASED_STORE_LAST_REPEAT = "UI_BASED_STORE_LAST_REPEAT";
     private static final String COMPANION_APP_IOB_ENABLED_PREFERENCE_KEY = "fetch_iob_from_companion_app";
-    private static final Persist.DoubleTimeout iob_store =
-            new Persist.DoubleTimeout("COMPANION_APP_IOB_VALUE", Constants.MINUTE_IN_MS * 5);
     private static final String ENABLED_NOTIFICATION_LISTENERS = "enabled_notification_listeners";
     private static final String ACTION_NOTIFICATION_LISTENER_SETTINGS = "android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS";
 
@@ -93,6 +92,7 @@ public class UiBasedCollector extends NotificationListenerService {
         coOptedPackages.add("com.camdiab.fx_alert.mgdl");
         coOptedPackages.add("com.camdiab.fx_alert.hx.mmoll");
         coOptedPackages.add("com.camdiab.fx_alert.hx.mgdl");
+        coOptedPackages.add("com.camdiab.fx_alert.mmoll.ca");
         coOptedPackages.add("com.medtronic.diabetes.guardian");
         coOptedPackages.add("com.medtronic.diabetes.guardianconnect");
         coOptedPackages.add("com.medtronic.diabetes.guardianconnect.us");
@@ -102,9 +102,20 @@ public class UiBasedCollector extends NotificationListenerService {
         coOptedPackages.add("com.senseonics.gen12androidapp");
         coOptedPackages.add("com.senseonics.androidapp");
         coOptedPackages.add("com.microtech.aidexx.mgdl");
-        coOptedPackages.add("com.ottai.seas"); // Experiment
+        coOptedPackages.add("com.microtech.aidexx.linxneo.mmoll");
+        coOptedPackages.add("com.microtech.aidexx.equil.mmoll");
+        coOptedPackages.add("com.microtech.aidexx.diaexport.mmoll"); //for microtech germany version, typo is intentional!
+        coOptedPackages.add("com.microtech.aidexx.smart.mmoll"); //for microtech Brazil version
+        coOptedPackages.add("com.ottai.seas");
         coOptedPackages.add("com.microtech.aidexx"); //for microtech china version
         coOptedPackages.add("com.ottai.tag"); // //for ottai china version
+        coOptedPackages.add("com.senseonics.eversense365.us");
+        coOptedPackages.add("com.kakaohealthcare.pasta"); // A Health app for sensors that we already collect from
+        coOptedPackages.add("com.sinocare.cgm.ce");
+        coOptedPackages.add("com.sinocare.ican.health.ce");
+        coOptedPackages.add("com.sinocare.ican.health.ru");
+        coOptedPackages.add("com.suswel.ai");
+        coOptedPackages.add("com.glucotech.app.android");
 
         coOptedPackagesAll.add("com.dexcom.dexcomone");
         coOptedPackagesAll.add("com.dexcom.d1plus");
@@ -114,15 +125,31 @@ public class UiBasedCollector extends NotificationListenerService {
         coOptedPackagesAll.add("com.senseonics.gen12androidapp");
         coOptedPackagesAll.add("com.senseonics.androidapp");
         coOptedPackagesAll.add("com.microtech.aidexx.mgdl");
-        coOptedPackagesAll.add("com.ottai.seas"); // Experiment
+        coOptedPackagesAll.add("com.microtech.aidexx.linxneo.mmoll");
+        coOptedPackagesAll.add("com.microtech.aidexx.equil.mmoll");
+        coOptedPackagesAll.add("com.microtech.aidexx.diaexport.mmoll");
+        coOptedPackagesAll.add("com.microtech.aidexx.smart.mmoll"); //for microtech Brazil version
+        coOptedPackagesAll.add("com.ottai.seas");
         coOptedPackagesAll.add("com.microtech.aidexx"); //for microtech china version
         coOptedPackagesAll.add("com.ottai.tag"); // //for ottai china version
+        coOptedPackagesAll.add("com.senseonics.eversense365.us");
+        coOptedPackagesAll.add("com.kakaohealthcare.pasta"); // Experiment
+        coOptedPackagesAll.add("com.sinocare.cgm.ce");
+        coOptedPackagesAll.add("com.sinocare.ican.health.ce");
+        coOptedPackagesAll.add("com.sinocare.ican.health.ru");
+        coOptedPackagesAll.add("com.suswel.ai");
+        coOptedPackagesAll.add("com.glucotech.app.android");
 
         companionAppIoBPackages.add("com.insulet.myblue.pdm");
+        companionAppIoBPackages.add("com.medtronic.diabetes.minimedmobile.eu");
 
         // The IoB value should be captured into the first match group.
         // English localization of the Omnipod 5 App
         companionAppIoBRegexes.add(Pattern.compile("IOB: ([\\d\\.,]+) U"));
+        // MiniMed Mobile (EU): "Active Insulin" label and "1.234 U" value in separate TextViews
+        companionAppIoBRegexes.add(Pattern.compile("^([\\d\\.]+) U$"));
+        // MiniMed Mobile (EU): "Aktives Insulin" label and "1,234 IE" value in separate TextViews
+        companionAppIoBRegexes.add(Pattern.compile("^([\\d\\,]+) IE$"));
     }
 
     @Override
@@ -156,10 +183,24 @@ public class UiBasedCollector extends NotificationListenerService {
         if (notification.contentView != null) {
             processCompanionAppIoBNotificationCV(notification.contentView);
         } else {
-            UserError.Log.e(TAG, "Content is empty");
+            processCompanionAppIoBNotificationTitle(notification);
         }
     }
 
+    private void processCompanionAppIoBNotificationTitle(final Notification notification) {
+        Double iob = null;
+        try {
+            String notificationTitle = notification.extras.getString("android.title");
+            iob = parseIoB(notificationTitle);
+
+            if (iob != null) {
+                if (debug) UserError.Log.d(TAG, "Inserting new IoB value extracted from title: " + iob);
+                PumpStatus.setBolusIoB(iob);
+            }
+        } catch (Exception e) {
+            UserError.Log.e(TAG, "exception in processCompanionAppIoBNotificationTitle: " + e);
+        }
+    }
     private void processCompanionAppIoBNotificationCV(final RemoteViews cview) {
         if (cview == null) return;
         val applied = cview.apply(this, null);
@@ -181,8 +222,8 @@ public class UiBasedCollector extends NotificationListenerService {
             }
 
             if (iob != null) {
-                if (debug) UserError.Log.d(TAG, "Inserting new IoB value: " + iob);
-                iob_store.set(iob);
+                if (debug) UserError.Log.d(TAG, "Inserting new IoB value extracted from CV: " + iob);
+                PumpStatus.setBolusIoB(iob);
             }
         } catch (Exception e) {
             UserError.Log.e(TAG, "exception in processCompanionAppIoBNotificationCV: " + e);
@@ -201,10 +242,6 @@ public class UiBasedCollector extends NotificationListenerService {
         }
 
         return null;
-    }
-
-    public static Double getCurrentIoB() {
-        return iob_store.get();
     }
 
     @Override

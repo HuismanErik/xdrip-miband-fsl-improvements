@@ -49,6 +49,7 @@ import com.eveningoutpost.dexdrip.databinding.ActivitySystemStatusBinding;
 import com.eveningoutpost.dexdrip.ui.MicroStatus;
 import com.eveningoutpost.dexdrip.ui.MicroStatusImpl;
 import com.eveningoutpost.dexdrip.utils.DexCollectionType;
+import com.eveningoutpost.dexdrip.utils.LocationHelper;
 import com.eveningoutpost.dexdrip.wearintegration.WatchUpdaterService;
 import com.google.android.gms.wearable.DataMap;
 
@@ -321,25 +322,34 @@ public class SystemStatusFragment extends Fragment {
         }
 
         String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
-        if (collection_method.compareTo("DexcomG5") == 0) {
+        if (collection_method.compareTo("DexcomG5") == 0) { // TODO dex collection type
             Transmitter defaultTransmitter = new Transmitter(prefs.getString("dex_txid", "ABCDEF"));
             if (Build.VERSION.SDK_INT >= 18) {
                 mBluetoothAdapter = mBluetoothManager.getAdapter();
             }
             if (mBluetoothAdapter != null) {
-                Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-                if ((pairedDevices != null) && (pairedDevices.size() > 0)) {
-                    for (BluetoothDevice device : pairedDevices) {
-                        if (device.getName() != null) {
+                try {
+                    Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+                    if ((pairedDevices != null) && (pairedDevices.size() > 0)) {
+                        for (BluetoothDevice device : pairedDevices) {
+                            if (device.getName() != null) {
 
-                            String transmitterIdLastTwo = Extensions.lastTwoCharactersOfString(defaultTransmitter.transmitterId);
-                            String deviceNameLastTwo = Extensions.lastTwoCharactersOfString(device.getName());
+                                String transmitterIdLastTwo = Extensions.lastTwoCharactersOfString(defaultTransmitter.transmitterId);
+                                String deviceNameLastTwo = Extensions.lastTwoCharactersOfString(device.getName());
 
-                            if (transmitterIdLastTwo.equals(deviceNameLastTwo)) {
-                                current_device.setText(defaultTransmitter.transmitterId);
+                                if (transmitterIdLastTwo.equals(deviceNameLastTwo)) {
+                                    current_device.setText(defaultTransmitter.transmitterId);
+                                }
+
                             }
-
                         }
+                    }
+                } catch (SecurityException e) {
+                    Log.d(TAG, "Got SecurityException in setCurrentDevice "+ e);
+                    try {
+                        LocationHelper.requestLocationForBluetooth(this.getActivity());
+                    } catch (Exception e1) {
+                        Log.d(TAG, "Got Exception in setCurrentDevice attempting to request location permissions"+ e1);
                     }
                 }
             } else {
@@ -372,18 +382,28 @@ public class SystemStatusFragment extends Fragment {
 
     private void setConnectionStatus() {
         boolean connected = false;
-        if (mBluetoothManager != null && activeBluetoothDevice != null && (Build.VERSION.SDK_INT >= 18)) {
-            for (BluetoothDevice bluetoothDevice : mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
-                if (bluetoothDevice.getAddress().compareTo(activeBluetoothDevice.address) == 0) {
-                    connected = true;
+        try {
+            if (mBluetoothManager != null && activeBluetoothDevice != null && (Build.VERSION.SDK_INT >= 18)) {
+                for (BluetoothDevice bluetoothDevice : mBluetoothManager.getConnectedDevices(BluetoothProfile.GATT)) {
+                    if (bluetoothDevice.getAddress().compareTo(activeBluetoothDevice.address) == 0) {
+                        connected = true;
+                    }
                 }
             }
+
+            if (connected) {
+                connection_status.setText(safeGetContext().getString(R.string.connected));
+            } else {
+                connection_status.setText(safeGetContext().getString(R.string.not_connected));
+            }
+        } catch (SecurityException e) {
+            Log.e(TAG, "Got SecurityException in setConnectionStatus ", e);
+            connection_status.setText(R.string.need_bluetooth_permission);
+        } catch (Exception e) {
+            connection_status.setText("Unknown");
+            Log.d(TAG, "Got Exception in setConnectionStatus "+ e);
         }
-        if (connected) {
-            connection_status.setText(safeGetContext().getString(R.string.connected));
-        } else {
-            connection_status.setText(safeGetContext().getString(R.string.not_connected));
-        }
+
 
         String collection_method = prefs.getString("dex_collection_method", "BluetoothWixel");
         if (collection_method.compareTo("DexcomG5") == 0) {
