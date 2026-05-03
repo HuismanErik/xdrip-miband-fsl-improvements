@@ -361,9 +361,6 @@ public class MiBandService extends JamBaseBluetoothSequencer {
                 break;
             case "alarm":
                 ((MiBandState) mState).setAlarmSequence();
-                if (isNightMode) {
-                    messageQueue.addFirst(new QueueMessage("update_bg_force"));
-                }
                 break;
             case "after_alarm":
                 if (!I.state.equals(MiBandState.WAITING_USER_RESPONSE)) break;
@@ -372,6 +369,7 @@ public class MiBandService extends JamBaseBluetoothSequencer {
                     String msgText = xdrip.getAppContext().getString(R.string.miband_alert_missing_text) + missingAlertMessage;
                     messageQueue.addFirst(new QueueMessage("message", MIBAND_NOTIFY_TYPE_MESSAGE, msgText, xdrip.getAppContext().getString(R.string.miband_alert_missing_title_text)));
                 }
+                startBgTimer();
                 ((MiBandState) mState).setQueueSequence();
                 break;
             case "update_bg":
@@ -815,7 +813,7 @@ public class MiBandService extends JamBaseBluetoothSequencer {
                 activeAlertType = title;
                 missingAlertMessage = message;
                 stopBgUpdateTimer();
-                bgServiceIntent = WakeLockTrampoline.getPendingIntent(this.getClass(), Constants.MIBAND_SERVICE_BG_RETRY_ID, "after_alarm");
+                bgServiceIntent = WakeLockTrampoline.getPendingIntent(this.getClass(), Constants.MIBAND_SERVICE_AFTER_ALARM_ID, "after_alarm");
                 JoH.wakeUpIntent(xdrip.getAppContext(), CALL_ALERT_DELAY, bgServiceIntent);
                 break;
             case MIBAND_NOTIFY_TYPE_MESSAGE:
